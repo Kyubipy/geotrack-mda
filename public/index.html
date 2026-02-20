@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#080c15">
+<title>GeoTrack · Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+  :root{--cy:#22d3ee;--gn:#34d399;--am:#fbbf24;--rd:#f87171;--bg:#080c15;--p:rgba(12,17,30,0.94);--bd:rgba(255,255,255,0.07);--t1:#f1f5f9;--t2:#94a3b8;--t3:#475569}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--t1);overflow:hidden;height:100vh;height:100dvh}
+  #map{position:absolute;inset:0;z-index:1}
+  .leaflet-control-zoom,.leaflet-control-attribution{display:none!important}
+
+  /* Config overlay */
+  .config-overlay{position:fixed;inset:0;z-index:2000;background:rgba(8,12,21,0.97);display:flex;align-items:center;justify-content:center;padding:20px}
+  .config-overlay.hidden{display:none}
+  .config-card{background:rgba(15,20,35,0.95);border:1px solid var(--bd);border-radius:20px;padding:30px;width:100%;max-width:380px;text-align:center}
+  .config-card h2{font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--cy);margin-bottom:16px}
+  .cfg-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .cfg-row label{font-size:11px;color:var(--t2);width:70px;text-align:left;flex-shrink:0}
+  .cfg-row input{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;color:var(--t1);font-family:'JetBrains Mono',monospace;font-size:11px}
+  .cfg-row input:focus{outline:none;border-color:var(--cy)}
+  .cfg-btn{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--cy),#0891b2);color:var(--bg);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;margin-top:8px}
+
+  /* HUD */
+  .top{position:fixed;top:0;left:0;right:0;z-index:900;padding:max(env(safe-area-inset-top),8px) 14px 10px;background:linear-gradient(180deg,rgba(8,12,21,0.95) 60%,transparent);display:flex;align-items:center;justify-content:space-between}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-dot{width:9px;height:9px;background:var(--cy);border-radius:50%;box-shadow:0 0 10px rgba(34,211,238,0.5);animation:blink 2s infinite}
+  .logo h1{font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--cy)}
+  .logo small{font-size:10px;color:var(--t3);display:block}
+  .top-right{display:flex;align-items:center;gap:12px}
+  .live{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--gn);letter-spacing:1.5px}
+  .live-dot{width:6px;height:6px;background:var(--gn);border-radius:50%;animation:blink 1.5s infinite}
+  .clock{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--t2);font-weight:700}
+
+  .stats-bar{position:fixed;bottom:0;left:0;right:0;z-index:900;padding:8px 10px max(env(safe-area-inset-bottom),10px);background:linear-gradient(0deg,rgba(8,12,21,0.95) 60%,transparent);display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .pill{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;background:rgba(255,255,255,0.05);border:1px solid var(--bd)}
+  .pill .v{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700}
+  .pill .l{font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:0.5px}
+
+  .list-toggle{position:fixed;top:62px;right:10px;z-index:901;width:38px;height:38px;border-radius:10px;background:var(--p);border:1px solid var(--bd);color:var(--t1);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .panel{position:fixed;top:108px;right:10px;bottom:65px;width:260px;z-index:900;overflow-y:auto;scrollbar-width:none;display:none;flex-direction:column;gap:4px;background:var(--p);border:1px solid var(--bd);border-radius:14px;padding:10px}
+  .panel::-webkit-scrollbar{display:none}
+  .panel.open{display:flex}
+  .fi{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:border-color 0.2s}
+  .fi:active,.fi:hover{border-color:rgba(34,211,238,0.3)}
+  .fi-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .fi-info{flex:1;min-width:0}
+  .fi-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fi-zone{font-size:10px;color:var(--t3)}
+  .fi-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);flex-shrink:0}
+
+  .zoom-btns{position:fixed;bottom:72px;right:10px;z-index:901;display:flex;flex-direction:column;gap:4px}
+  .zbtn{width:36px;height:36px;border-radius:8px;background:var(--p);border:1px solid var(--bd);color:var(--t1);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .zbtn:active{background:rgba(255,255,255,0.1)}
+
+  .cfg-toggle{position:fixed;top:62px;left:10px;z-index:901;padding:6px 10px;border-radius:8px;background:var(--p);border:1px solid var(--bd);color:var(--t2);font-size:10px;cursor:pointer;display:flex;align-items:center;gap:4px}
+
+  /* Marker */
+  .mk{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.9)}
+  .mk-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;border:1.5px solid;opacity:0;animation:ping 2.5s ease-out infinite}
+
+  .leaflet-popup-content-wrapper{background:var(--p)!important;border:1px solid var(--bd)!important;border-radius:12px!important;color:var(--t1)!important;box-shadow:0 8px 30px rgba(0,0,0,0.5)!important}
+  .leaflet-popup-tip{background:var(--p)!important}
+  .leaflet-popup-close-button{color:var(--t3)!important}
+  .pop{font-family:'Plus Jakarta Sans',sans-serif;padding:4px;min-width:170px}
+  .pop-name{font-size:14px;font-weight:700;margin-bottom:2px}
+  .pop-zone{font-size:11px;color:var(--t2);margin-bottom:8px}
+  .pop-row{font-size:12px;display:flex;justify-content:space-between;margin-bottom:3px}
+  .pop-val{font-weight:600}
+  .pop-time{font-size:10px;color:var(--t3);margin-top:6px;border-top:1px solid var(--bd);padding-top:6px}
+
+  .no-data{text-align:center;padding:40px 20px;color:var(--t3);font-size:13px}
+
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  @keyframes ping{0%{width:16px;height:16px;opacity:0.7}100%{width:44px;height:44px;opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Config Overlay -->
+<div class="config-overlay" id="configOverlay">
+  <div class="config-card">
+    <h2>📍 GeoTrack Dashboard</h2>
+    <div class="cfg-row">
+      <label>URL</label>
+      <input type="text" id="cfgUrl" placeholder="https://xxx.supabase.co">
+    </div>
+    <div class="cfg-row">
+      <label>Anon Key</label>
+      <input type="text" id="cfgKey" placeholder="eyJhbGc...">
+    </div>
+    <button class="cfg-btn" onclick="saveAndInit()">Conectar</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div class="top">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <div>
+      <h1>GeoTrack</h1>
+      <small>Fiscalización · MDA</small>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="live"><div class="live-dot"></div>EN VIVO</div>
+    <div class="clock" id="clk">--:--</div>
+  </div>
+</div>
+
+<button class="cfg-toggle" onclick="showCfg()">⚙️ Config</button>
+<button class="list-toggle" id="togBtn" onclick="togList()">☰</button>
+<div class="panel" id="panel"></div>
+
+<div class="zoom-btns">
+  <button class="zbtn" onclick="map.zoomIn()">+</button>
+  <button class="zbtn" onclick="map.zoomOut()">−</button>
+  <button class="zbtn" onclick="fitAll()">⊙</button>
+</div>
+
+<div class="stats-bar">
+  <div class="pill"><span class="v" style="color:var(--cy)" id="sT">0</span><span class="l">Rastreando</span></div>
+  <div class="pill"><span class="v" style="color:var(--gn)" id="sU">0</span><span class="l">Señales</span></div>
+</div>
+
+<div id="map"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let sb = null;
+const fiscData = {}; // { id: { nombre, zona, color, lat, lng, speed, lastSeen, marker, trail, trailLine } }
+
+// ============================================================
+// MAP
+// ============================================================
+const map = L.map('map', { center: [-25.2867, -57.6470], zoom: 14, zoomControl: false, attributionControl: false });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19 }).addTo(map);
+
+// ============================================================
+// CONFIG
+// ============================================================
+function loadCfg() {
+  const url = localStorage.getItem('gt_dash_url') || '';
+  const key = localStorage.getItem('gt_dash_key') || '';
+  document.getElementById('cfgUrl').value = url;
+  document.getElementById('cfgKey').value = key;
+  if (url && key) {
+    initApp(url, key);
+    document.getElementById('configOverlay').classList.add('hidden');
+  }
+}
+
+function saveAndInit() {
+  const url = document.getElementById('cfgUrl').value.trim();
+  const key = document.getElementById('cfgKey').value.trim();
+  if (!url || !key) { alert('Completá URL y Key'); return; }
+  localStorage.setItem('gt_dash_url', url);
+  localStorage.setItem('gt_dash_key', key);
+  initApp(url, key);
+  document.getElementById('configOverlay').classList.add('hidden');
+}
+
+function showCfg() {
+  document.getElementById('configOverlay').classList.remove('hidden');
+}
+
+// ============================================================
+// INIT APP
+// ============================================================
+async function initApp(url, key) {
+  sb = window.supabase.createClient(url, key);
+
+  // Load fiscalizadores
+  const { data: fiscs } = await sb.from('fiscalizadores').select('*').eq('activo', true);
+  if (fiscs) {
+    fiscs.forEach(f => {
+      fiscData[f.id] = {
+        nombre: f.nombre,
+        zona: f.zona || '',
+        color: f.color || '#22d3ee',
+        lat: null, lng: null, speed: 0,
+        lastSeen: null,
+        marker: null,
+        trail: [],
+        trailLine: L.polyline([], { color: f.color || '#22d3ee', weight: 2, opacity: 0.3, dashArray: '4 6' }).addTo(map)
+      };
+    });
+  }
+
+  // Load last known positions
+  for (const fid of Object.keys(fiscData)) {
+    const { data: locs } = await sb.from('ubicaciones')
+      .select('*')
+      .eq('fiscalizador_id', fid)
+      .order('timestamp', { ascending: false })
+      .limit(30);
+
+    if (locs && locs.length > 0) {
+      const latest = locs[0];
+      const fd = fiscData[fid];
+      fd.lat = latest.lat;
+      fd.lng = latest.lng;
+      fd.speed = latest.speed || 0;
+      fd.lastSeen = new Date(latest.timestamp);
+
+      // Create marker
+      updateMarker(fid);
+
+      // Trail from history (reverse to chronological order)
+      fd.trail = locs.reverse().map(l => [l.lat, l.lng]);
+      fd.trailLine.setLatLngs(fd.trail);
+    }
+  }
+
+  fitAll();
+  updateStats();
+  renderList();
+
+  // Subscribe to real-time updates
+  sb.channel('ubicaciones-realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ubicaciones' }, (payload) => {
+      const row = payload.new;
+      const fd = fiscData[row.fiscalizador_id];
+      if (!fd) return;
+
+      fd.lat = row.lat;
+      fd.lng = row.lng;
+      fd.speed = row.speed || 0;
+      fd.lastSeen = new Date(row.timestamp);
+
+      // Trail
+      fd.trail.push([row.lat, row.lng]);
+      if (fd.trail.length > 50) fd.trail.shift();
+      fd.trailLine.setLatLngs(fd.trail);
+
+      updateMarker(row.fiscalizador_id);
+      updateStats();
+      renderList();
+    })
+    .subscribe();
+}
+
+// ============================================================
+// MARKERS
+// ============================================================
+function updateMarker(fid) {
+  const fd = fiscData[fid];
+  if (fd.lat === null) return;
+
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center">
+      <div class="mk-ring" style="border-color:${fd.color}"></div>
+      <div class="mk" style="background:${fd.color}"></div>
+    </div>`,
+    iconSize: [32, 32], iconAnchor: [16, 16]
+  });
+
+  const ago = fd.lastSeen ? timeAgo(fd.lastSeen) : '??';
+  const popupHtml = `<div class="pop">
+    <div class="pop-name" style="color:${fd.color}">${fd.nombre}</div>
+    <div class="pop-zone">📍 ${fd.zona || 'Sin zona asignada'}</div>
+    <div class="pop-row"><span>Velocidad</span><span class="pop-val">${fd.speed.toFixed(1)} km/h</span></div>
+    <div class="pop-row"><span>Precisión GPS</span><span class="pop-val">±${Math.round(fd.speed)}m</span></div>
+    <div class="pop-time">Última señal: ${ago}</div>
+  </div>`;
+
+  if (fd.marker) {
+    fd.marker.setLatLng([fd.lat, fd.lng]);
+    fd.marker.setPopupContent(popupHtml);
+  } else {
+    fd.marker = L.marker([fd.lat, fd.lng], { icon }).addTo(map);
+    fd.marker.bindPopup(popupHtml, { closeButton: true, maxWidth: 220 });
+  }
+}
+
+// ============================================================
+// UI
+// ============================================================
+function updateStats() {
+  const active = Object.values(fiscData).filter(f => f.lat !== null);
+  const totalSignals = Object.values(fiscData).reduce((s, f) => s + f.trail.length, 0);
+  document.getElementById('sT').textContent = active.length;
+  document.getElementById('sU').textContent = totalSignals;
+}
+
+let listOpen = false;
+function togList() {
+  listOpen = !listOpen;
+  document.getElementById('panel').classList.toggle('open', listOpen);
+  document.getElementById('togBtn').textContent = listOpen ? '✕' : '☰';
+}
+
+function renderList() {
+  const entries = Object.entries(fiscData).filter(([_, f]) => f.lat !== null);
+  if (entries.length === 0) {
+    document.getElementById('panel').innerHTML = '<div class="no-data">Sin fiscalizadores activos.<br>Abrí tracker.html en un celular.</div>';
+    return;
+  }
+  document.getElementById('panel').innerHTML = entries.map(([id, f]) => {
+    const ago = f.lastSeen ? timeAgo(f.lastSeen) : '??';
+    return `<div class="fi" onclick="flyTo('${id}')">
+      <div class="fi-dot" style="background:${f.color}"></div>
+      <div class="fi-info"><div class="fi-name">${f.nombre}</div><div class="fi-zone">${f.zona || 'En campo'}</div></div>
+      <div class="fi-time">${ago}</div>
+    </div>`;
+  }).join('');
+}
+
+function flyTo(id) {
+  const fd = fiscData[id];
+  if (!fd || !fd.lat) return;
+  map.flyTo([fd.lat, fd.lng], 17, { duration: 0.6 });
+  setTimeout(() => fd.marker && fd.marker.openPopup(), 700);
+}
+
+function fitAll() {
+  const points = Object.values(fiscData).filter(f => f.lat !== null).map(f => [f.lat, f.lng]);
+  if (points.length > 0) {
+    map.fitBounds(points, { padding: [80, 40] });
+  }
+}
+
+function timeAgo(date) {
+  const s = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (s < 10) return 'ahora';
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'min';
+  return Math.floor(s / 3600) + 'h';
+}
+
+function updateClock() {
+  document.getElementById('clk').textContent = new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+setInterval(updateClock, 1000);
+setInterval(renderList, 5000); // refresh "time ago"
+updateClock();
+loadCfg();
+</script>
+</body>
+</html>
