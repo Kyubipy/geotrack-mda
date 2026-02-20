@@ -6,44 +6,33 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#080c15">
 <title>GeoTrack · Tracker</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#080c15;color:#f1f5f9;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#080c15;color:#f1f5f9;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
   .card{background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:30px;width:100%;max-width:380px;text-align:center}
-  h1{font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#22d3ee;margin-bottom:4px}
+  h1{font-size:15px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#22d3ee;margin-bottom:4px}
   .sub{font-size:11px;color:#475569;margin-bottom:24px}
-  .status-ring{width:120px;height:120px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;transition:all 0.5s}
-  .status-ring.off{border:3px solid #334155;background:rgba(51,65,85,0.1)}
-  .status-ring.on{border:3px solid #22d3ee;background:rgba(34,211,238,0.05);box-shadow:0 0 40px rgba(34,211,238,0.15)}
-  .status-ring.err{border:3px solid #f87171;background:rgba(248,113,113,0.05)}
-  .status-icon{font-size:40px}
-  .status-text{font-size:15px;font-weight:700;margin-bottom:6px}
-  .status-sub{font-size:12px;color:#94a3b8;margin-bottom:24px}
-  .btn{width:100%;padding:14px;border-radius:12px;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.3s}
-  .btn-start{background:linear-gradient(135deg,#22d3ee,#0891b2);color:#080c15}
-  .btn-start:active{transform:scale(0.97)}
-  .btn-stop{background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3)}
-  .btn-stop:active{transform:scale(0.97)}
-  .btn:disabled{opacity:0.4;cursor:not-allowed}
-  .data-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
-  .data-item{background:rgba(255,255,255,0.03);border-radius:10px;padding:12px 8px}
-  .data-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#22d3ee}
-  .data-lbl{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
-  .log{margin-top:16px;max-height:120px;overflow-y:auto;scrollbar-width:none;text-align:left;padding:10px;background:rgba(0,0,0,0.3);border-radius:10px}
-  .log::-webkit-scrollbar{display:none}
-  .log-line{font-family:'JetBrains Mono',monospace;font-size:10px;color:#475569;margin-bottom:3px}
-  .log-line.ok{color:#34d399}
-  .log-line.err{color:#f87171}
-  .config-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.07)}
-  .config-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-  .config-row label{font-size:11px;color:#94a3b8;flex-shrink:0;width:70px;text-align:left}
-  .config-row input{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;color:#f1f5f9;font-family:'JetBrains Mono',monospace;font-size:11px}
-  .config-row input:focus{outline:none;border-color:#22d3ee}
-  .save-btn{margin-top:8px;padding:8px 16px;background:rgba(34,211,238,0.1);color:#22d3ee;border:1px solid rgba(34,211,238,0.2);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;width:100%}
-  .hidden{display:none}
-  .wake-notice{font-size:10px;color:#fbbf24;margin-top:12px;padding:8px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:8px}
+  .ring{width:120px;height:120px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;transition:all 0.5s}
+  .ring.off{border:3px solid #334155;background:rgba(51,65,85,0.1)}
+  .ring.on{border:3px solid #22d3ee;background:rgba(34,211,238,0.05);box-shadow:0 0 40px rgba(34,211,238,0.15)}
+  .ring.err{border:3px solid #f87171;background:rgba(248,113,113,0.05)}
+  .icon{font-size:40px}
+  .stxt{font-size:15px;font-weight:700;margin-bottom:6px}
+  .ssub{font-size:12px;color:#94a3b8;margin-bottom:24px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+  .gi{background:rgba(255,255,255,0.03);border-radius:10px;padding:12px 8px}
+  .gv{font-family:monospace;font-size:16px;font-weight:700;color:#22d3ee}
+  .gl{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+  .btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.3s}
+  .btn-go{background:linear-gradient(135deg,#22d3ee,#0891b2);color:#080c15}
+  .btn-go:active{transform:scale(0.97)}
+  .btn-no{background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3);display:none}
+  .btn-no:active{transform:scale(0.97)}
+  .warn{font-size:10px;color:#fbbf24;margin-top:12px;padding:8px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:8px}
+  .log{margin-top:16px;max-height:150px;overflow-y:auto;text-align:left;padding:10px;background:rgba(0,0,0,0.3);border-radius:10px}
+  .ll{font-family:monospace;font-size:10px;color:#475569;margin-bottom:3px}
+  .ll.ok{color:#34d399}
+  .ll.er{color:#f87171}
 </style>
 </head>
 <body>
@@ -52,242 +41,203 @@
   <h1>📍 GeoTrack</h1>
   <div class="sub">Tracker · Municipalidad de Asunción</div>
 
-  <!-- Config Section -->
-  <div id="configSection">
-    <div class="config-section" style="border:none;margin:0;padding:0">
-      <div class="config-row">
-        <label>URL</label>
-        <input type="text" id="cfgUrl" placeholder="https://xxx.supabase.co">
-      </div>
-      <div class="config-row">
-        <label>Anon Key</label>
-        <input type="text" id="cfgKey" placeholder="eyJhbGc...">
-      </div>
-      <div class="config-row">
-        <label>Tu ID</label>
-        <input type="text" id="cfgFiscId" placeholder="uuid del INSERT">
-      </div>
-      <button class="save-btn" onclick="saveConfig()">Guardar y continuar</button>
+  <div class="ring off" id="ring">
+    <span class="icon" id="icon">📍</span>
+  </div>
+  <div class="stxt" id="stxt">Listo para rastrear</div>
+  <div class="ssub" id="ssub">Presioná Iniciar para comenzar</div>
+
+  <div class="grid">
+    <div class="gi">
+      <div class="gv" id="dLat">--</div>
+      <div class="gl">Latitud</div>
+    </div>
+    <div class="gi">
+      <div class="gv" id="dLng">--</div>
+      <div class="gl">Longitud</div>
+    </div>
+    <div class="gi">
+      <div class="gv" id="dSpd">--</div>
+      <div class="gl">Km/h</div>
+    </div>
+    <div class="gi">
+      <div class="gv" id="dSent">0</div>
+      <div class="gl">Enviados</div>
     </div>
   </div>
 
-  <!-- Tracker Section -->
-  <div id="trackerSection" class="hidden">
-    <div class="status-ring off" id="ring">
-      <span class="status-icon" id="icon">📍</span>
-    </div>
-    <div class="status-text" id="stText">Listo para rastrear</div>
-    <div class="status-sub" id="stSub">Presioná iniciar para comenzar</div>
+  <button class="btn btn-go" id="btnGo" onclick="startTracking()">Iniciar Rastreo</button>
+  <button class="btn btn-no" id="btnNo" onclick="stopTracking()">Detener</button>
 
-    <div class="data-grid">
-      <div class="data-item">
-        <div class="data-val" id="dLat">--</div>
-        <div class="data-lbl">Latitud</div>
-      </div>
-      <div class="data-item">
-        <div class="data-val" id="dLng">--</div>
-        <div class="data-lbl">Longitud</div>
-      </div>
-      <div class="data-item">
-        <div class="data-val" id="dSpd">--</div>
-        <div class="data-lbl">Km/h</div>
-      </div>
-      <div class="data-item">
-        <div class="data-val" id="dSent">0</div>
-        <div class="data-lbl">Enviados</div>
-      </div>
-    </div>
+  <div class="warn">⚠️ Mantené la pantalla encendida y no minimices el navegador.</div>
 
-    <button class="btn btn-start" id="btnStart" onclick="startTracking()">Iniciar rastreo</button>
-    <button class="btn btn-stop hidden" id="btnStop" onclick="stopTracking()">Detener</button>
-
-    <div class="wake-notice">⚠️ Mantené la pantalla encendida para rastreo continuo. No minimices el navegador.</div>
-
-    <div class="log" id="log"></div>
-
-    <button class="save-btn" style="margin-top:12px" onclick="showConfig()">⚙️ Configuración</button>
-  </div>
+  <div class="log" id="log"></div>
 </div>
 
 <script>
-// ============================================================
-// STATE
-// ============================================================
-let supabase = null;
-let watchId = null;
-let sendInterval = null;
-let lastPos = null;
-let sentCount = 0;
-let wakeLock = null;
-let fiscId = '';
+// ============================================
+// CREDENCIALES - YA CONFIGURADAS
+// ============================================
+var SUPA_URL = 'https://wyxrtqudbjbwwlmqlrbc.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5eHJ0cXVkYmpid3dsbXFscmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTc2ODcsImV4cCI6MjA3Mzg3MzY4N30.vV0m-2D9Hod6t3CwW9ggFlgmMewlF0SaeuC2horX8fs';
+var FISC_ID = '6f738c3d-4a4f-4568-9f92-29f9012c6d6a';
 
-// ============================================================
-// CONFIG
-// ============================================================
-function loadConfig() {
-  const url = localStorage.getItem('gt_url') || '';
-  const key = localStorage.getItem('gt_key') || '';
-  fiscId = localStorage.getItem('gt_fisc_id') || '';
-  document.getElementById('cfgUrl').value = url;
-  document.getElementById('cfgKey').value = key;
-  document.getElementById('cfgFiscId').value = fiscId;
-  if (url && key && fiscId) {
-    initSupabase(url, key);
-    showTracker();
-  }
+// ============================================
+// VARIABLES
+// ============================================
+var watchId = null;
+var sendTimer = null;
+var lastPos = null;
+var sentCount = 0;
+var wakeLock = null;
+
+// ============================================
+// ENVIAR A SUPABASE (fetch puro, sin SDK)
+// ============================================
+function enviar(lat, lng, speed, accuracy) {
+  return fetch(SUPA_URL + '/rest/v1/ubicaciones', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({
+      fiscalizador_id: FISC_ID,
+      lat: lat,
+      lng: lng,
+      speed: speed,
+      accuracy: accuracy
+    })
+  });
 }
 
-function saveConfig() {
-  const url = document.getElementById('cfgUrl').value.trim();
-  const key = document.getElementById('cfgKey').value.trim();
-  fiscId = document.getElementById('cfgFiscId').value.trim();
-  if (!url || !key || !fiscId) { alert('Completá todos los campos'); return; }
-  localStorage.setItem('gt_url', url);
-  localStorage.setItem('gt_key', key);
-  localStorage.setItem('gt_fisc_id', fiscId);
-  initSupabase(url, key);
-  showTracker();
-  addLog('Configuración guardada ✓', 'ok');
-}
-
-function showTracker() {
-  document.getElementById('configSection').classList.add('hidden');
-  document.getElementById('trackerSection').classList.remove('hidden');
-}
-
-function showConfig() {
-  document.getElementById('configSection').classList.remove('hidden');
-  document.getElementById('trackerSection').classList.add('hidden');
-}
-
-function initSupabase(url, key) {
-  supabase = window.supabase.createClient(url, key);
-}
-
-// ============================================================
-// TRACKING
-// ============================================================
-async function startTracking() {
+// ============================================
+// INICIAR RASTREO
+// ============================================
+function startTracking() {
   if (!navigator.geolocation) {
     setStatus('err', '❌', 'Sin GPS', 'Tu navegador no soporta geolocalización');
     return;
   }
 
-  // Request wake lock
-  try {
-    if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-      addLog('Wake Lock activado - pantalla no se apagará', 'ok');
-    }
-  } catch (e) {
-    addLog('Wake Lock no disponible: ' + e.message, 'err');
+  // Wake lock para que no se apague la pantalla
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').then(function(wl) {
+      wakeLock = wl;
+      addLog('Pantalla no se apagará ✓', 'ok');
+    }).catch(function() {
+      addLog('Wake Lock no disponible', 'er');
+    });
   }
 
-  // Start watching position
+  // Escuchar GPS
   watchId = navigator.geolocation.watchPosition(
-    (pos) => {
+    function(pos) {
       lastPos = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
-        speed: pos.coords.speed ? (pos.coords.speed * 3.6) : 0, // m/s to km/h
-        accuracy: pos.coords.accuracy
+        speed: pos.coords.speed ? (pos.coords.speed * 3.6) : 0,
+        accuracy: pos.coords.accuracy || 0
       };
       document.getElementById('dLat').textContent = lastPos.lat.toFixed(5);
       document.getElementById('dLng').textContent = lastPos.lng.toFixed(5);
       document.getElementById('dSpd').textContent = lastPos.speed.toFixed(1);
     },
-    (err) => {
-      addLog('Error GPS: ' + err.message, 'err');
+    function(err) {
+      addLog('Error GPS: ' + err.message, 'er');
       setStatus('err', '❌', 'Error GPS', err.message);
     },
     { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
   );
 
-  // Send position every 15 seconds
-  sendInterval = setInterval(sendPosition, 15000);
-  // Send first position after 2s
+  // Enviar cada 15 segundos
+  sendTimer = setInterval(sendPosition, 15000);
+  // Primer envío en 2 segundos
   setTimeout(sendPosition, 2000);
 
-  setStatus('on', '📡', 'Rastreando...', 'Enviando posición cada 15s');
-  document.getElementById('btnStart').classList.add('hidden');
-  document.getElementById('btnStop').classList.remove('hidden');
-  addLog('Rastreo iniciado', 'ok');
+  setStatus('on', '📡', 'Rastreando...', 'Enviando cada 15 segundos');
+  document.getElementById('btnGo').style.display = 'none';
+  document.getElementById('btnNo').style.display = 'block';
+  addLog('Rastreo iniciado ✓', 'ok');
 }
 
+// ============================================
+// DETENER
+// ============================================
 function stopTracking() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
-  if (sendInterval) {
-    clearInterval(sendInterval);
-    sendInterval = null;
-  }
-  if (wakeLock) {
-    wakeLock.release();
-    wakeLock = null;
-  }
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  if (sendTimer) { clearInterval(sendTimer); sendTimer = null; }
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
   lastPos = null;
   setStatus('off', '📍', 'Detenido', 'Rastreo pausado');
-  document.getElementById('btnStart').classList.remove('hidden');
-  document.getElementById('btnStop').classList.add('hidden');
-  addLog('Rastreo detenido', 'err');
+  document.getElementById('btnGo').style.display = 'block';
+  document.getElementById('btnNo').style.display = 'none';
+  addLog('Rastreo detenido', 'er');
 }
 
-async function sendPosition() {
-  if (!lastPos || !supabase) return;
-
-  try {
-    const { error } = await supabase.from('ubicaciones').insert({
-      fiscalizador_id: fiscId,
-      lat: lastPos.lat,
-      lng: lastPos.lng,
-      speed: lastPos.speed,
-      accuracy: lastPos.accuracy
+// ============================================
+// ENVIAR POSICIÓN
+// ============================================
+function sendPosition() {
+  if (!lastPos) { addLog('Esperando señal GPS...', 'er'); return; }
+  enviar(lastPos.lat, lastPos.lng, lastPos.speed, lastPos.accuracy)
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      sentCount++;
+      document.getElementById('dSent').textContent = sentCount;
+      addLog('Enviado #' + sentCount + ': ' + lastPos.lat.toFixed(4) + ', ' + lastPos.lng.toFixed(4), 'ok');
+    })
+    .catch(function(e) {
+      addLog('Error: ' + e.message, 'er');
     });
-
-    if (error) throw error;
-
-    sentCount++;
-    document.getElementById('dSent').textContent = sentCount;
-    addLog(`Enviado #${sentCount}: ${lastPos.lat.toFixed(4)}, ${lastPos.lng.toFixed(4)}`, 'ok');
-  } catch (e) {
-    addLog('Error enviando: ' + e.message, 'err');
-  }
 }
 
-// ============================================================
-// UI HELPERS
-// ============================================================
+// ============================================
+// HELPERS UI
+// ============================================
 function setStatus(type, icon, text, sub) {
-  document.getElementById('ring').className = 'status-ring ' + type;
+  document.getElementById('ring').className = 'ring ' + type;
   document.getElementById('icon').textContent = icon;
-  document.getElementById('stText').textContent = text;
-  document.getElementById('stSub').textContent = sub;
+  document.getElementById('stxt').textContent = text;
+  document.getElementById('ssub').textContent = sub;
 }
 
 function addLog(msg, type) {
-  const log = document.getElementById('log');
-  const time = new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  log.innerHTML = `<div class="log-line ${type || ''}">${time} · ${msg}</div>` + log.innerHTML;
-  // Keep only last 30 lines
+  var log = document.getElementById('log');
+  var now = new Date();
+  var h = String(now.getHours()).padStart(2,'0');
+  var m = String(now.getMinutes()).padStart(2,'0');
+  var s = String(now.getSeconds()).padStart(2,'0');
+  var time = h + ':' + m + ':' + s;
+  var div = document.createElement('div');
+  div.className = 'll ' + (type || '');
+  div.textContent = time + ' · ' + msg;
+  if (log.firstChild) {
+    log.insertBefore(div, log.firstChild);
+  } else {
+    log.appendChild(div);
+  }
   while (log.children.length > 30) log.removeChild(log.lastChild);
 }
 
-// Handle page visibility (re-acquire wake lock)
-document.addEventListener('visibilitychange', async () => {
+// Re-activar wake lock al volver a la app
+document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'visible' && watchId !== null && !wakeLock) {
-    try {
-      if ('wakeLock' in navigator) {
-        wakeLock = await navigator.wakeLock.request('screen');
-        addLog('Wake Lock re-activado', 'ok');
-      }
-    } catch (e) {}
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').then(function(wl) {
+        wakeLock = wl;
+        addLog('Wake Lock re-activado ✓', 'ok');
+      }).catch(function() {});
+    }
   }
 });
 
-// Init
-loadConfig();
+// Mensaje inicial
+addLog('Conectado a Supabase ✓', 'ok');
+addLog('Fiscalizador: Robert', 'ok');
+addLog('Presioná INICIAR RASTREO', 'ok');
 </script>
 </body>
 </html>
